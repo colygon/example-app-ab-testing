@@ -4,3 +4,8 @@ altair==4.1.0
 pandas==1.2.5
 scipy==1.6.2
 click==8
+
+# CrewAI Integration Dependencies
+crewai>=0.86.0
+langchain-openai>=0.3.0
+python-dotenv>=1.0.0

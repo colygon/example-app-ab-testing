@@ -4,6 +4,8 @@ import numpy as np
 import scipy.stats
 from scipy.stats import norm
 import altair as alt
+import os
+from crew_agents import ABTestingCrew
 
 st.set_page_config(
     page_title="A/B Testing App", page_icon="📊", initial_sidebar_state="expanded"
@@ -429,3 +431,102 @@ if uploaded_file:
         .applymap(style_negative, props="color:red;")
         .apply(style_p_value, props="color:red;", axis=1, subset=["p-value"])
     )
+
+    # CrewAI Integration - AI-Powered Analysis
+    st.write("")
+    st.write("---")
+    st.write("## AI-Powered Statistical Analysis")
+    st.write("Get deeper insights from our AI agents specialized in statistical analysis")
+
+    # Check for OpenAI API key
+    openai_api_key = os.getenv("OPENAI_API_KEY")
+
+    if not openai_api_key:
+        st.warning("OpenAI API key not found. Please set OPENAI_API_KEY environment variable to enable AI-powered analysis.")
+        with st.expander("How to set up API key"):
+            st.code("""
+# Set your OpenAI API key as an environment variable:
+export OPENAI_API_KEY='your-api-key-here'
+
+# Or add it to your .env file:
+OPENAI_API_KEY=your-api-key-here
+            """)
+    else:
+        # Add button to trigger AI analysis
+        if st.button("Generate AI Analysis", type="primary"):
+            with st.spinner("Our AI agents are analyzing your A/B test results..."):
+                try:
+                    # Initialize CrewAI
+                    crew = ABTestingCrew()
+
+                    # Prepare metrics dictionary
+                    test_metrics = {
+                        'cra': st.session_state.cra,
+                        'crb': st.session_state.crb,
+                        'uplift': st.session_state.uplift,
+                        'p_value': st.session_state.p,
+                        'z_score': st.session_state.z,
+                        'significant': st.session_state.significant,
+                        'visitors_a': visitors_a,
+                        'visitors_b': visitors_b,
+                        'conversions_a': conversions_a,
+                        'conversions_b': conversions_b
+                    }
+
+                    # Run quick analysis
+                    analysis_result = crew.quick_analysis(test_metrics)
+
+                    # Display results
+                    st.success("Analysis complete!")
+
+                    st.write("### AI-Generated Insights")
+                    st.write(analysis_result)
+
+                    # Add option for detailed analysis
+                    with st.expander("Run Detailed Multi-Agent Analysis"):
+                        st.write("This will run all three specialized agents for comprehensive analysis:")
+                        st.write("1. Statistical Validator - Validates data quality and assumptions")
+                        st.write("2. Hypothesis Testing Specialist - Performs rigorous statistical testing")
+                        st.write("3. Business Insights Analyst - Generates actionable recommendations")
+
+                        if st.button("Run Detailed Analysis"):
+                            with st.spinner("Running comprehensive multi-agent analysis..."):
+                                data_context = f"""
+                                Control Group (A): {visitors_a} visitors, {conversions_a} conversions
+                                Treatment Group (B): {visitors_b} visitors, {conversions_b} conversions
+                                """
+
+                                test_context = f"""
+                                Conversion Rate A: {st.session_state.cra:.3f}%
+                                Conversion Rate B: {st.session_state.crb:.3f}%
+                                Uplift: {st.session_state.uplift:.3f}%
+                                P-value: {st.session_state.p:.6f}
+                                Z-score: {st.session_state.z:.6f}
+                                Hypothesis Type: {st.session_state.hypothesis}
+                                Significance Level: {st.session_state.alpha}
+                                Significant: {st.session_state.significant}
+                                """
+
+                                business_context = f"""
+                                A/B test comparing control vs treatment variant.
+                                Test file: {name}
+                                """
+
+                                detailed_results = crew.analyze_ab_test(
+                                    data_context=data_context,
+                                    test_context=test_context,
+                                    business_context=business_context
+                                )
+
+                                st.write("#### Validation Report")
+                                st.info(str(detailed_results.get('validation', 'N/A')))
+
+                                st.write("#### Hypothesis Testing Analysis")
+                                st.info(str(detailed_results.get('hypothesis_testing', 'N/A')))
+
+                                st.write("#### Business Insights")
+                                st.success(str(detailed_results.get('insights', 'N/A')))
+
+                except Exception as e:
+                    st.error(f"Error running AI analysis: {str(e)}")
+                    st.info("Make sure you have set up your OpenAI API key correctly and have the required dependencies installed.")
