@@ -7,5 +7,6 @@ click==8
 
 # CrewAI Integration Dependencies
 crewai>=0.86.0
+crewai-tools>=0.12.0
 langchain-openai>=0.3.0
 python-dotenv>=1.0.0

@@ -5,8 +5,9 @@
 This document describes the CrewAI integration added to the A/B Testing Streamlit app. The upgrade enhances the original statistical analysis capabilities with AI-powered insights from specialized agents.
 
 **Upgrade Date:** December 17, 2025
-**Agent ID:** Agent 32
+**Agent ID:** Agent 32 (Tools Enhancement by T10)
 **CrewAI Version:** >=0.86.0
+**Tools Added:** CSVSearchTool, BraveSearchTool
 
 ## What's New
 
@@ -44,6 +45,46 @@ The upgraded application now features three specialized AI agents that work toge
   - Identifies risks and considerations
   - Suggests follow-up tests
   - Delivers stakeholder-ready insights
+
+### CrewAI Tools Integration
+
+The application now includes two powerful tools to enhance agent capabilities:
+
+#### 1. CSVSearchTool
+- **Purpose:** Enables direct analysis of test results data from CSV files
+- **Used by:** Statistical Validator Agent
+- **Capabilities:**
+  - Analyze data distributions and patterns
+  - Identify outliers and anomalies
+  - Check for data completeness and consistency
+  - Validate data quality at the source
+  - Search and query CSV data using natural language
+
+**Example Use Case:** The Statistical Validator can directly examine the uploaded CSV file to detect data quality issues, missing values, or unusual patterns that might affect test validity.
+
+#### 2. BraveSearchTool
+- **Purpose:** Research current A/B testing best practices and methodologies
+- **Used by:** Hypothesis Testing Specialist, Business Insights Analyst
+- **Capabilities:**
+  - Research latest A/B testing methodologies
+  - Find industry best practices and standards
+  - Look up statistical concepts and interpretations
+  - Access case studies and implementation examples
+  - Verify current recommendations against industry consensus
+
+**Example Use Case:** The Hypothesis Tester can research the latest guidance on significance levels for specific industries, while the Insights Generator can find case studies of successful A/B test implementations.
+
+### Tool Configuration
+
+**CSVSearchTool Setup:**
+- Initialized with the path to the uploaded CSV file
+- Automatically available when CSV data is provided
+- Allows agents to query specific data points and patterns
+
+**BraveSearchTool Setup:**
+- Requires Brave API credentials (optional)
+- Falls back to standard search if credentials not available
+- Provides real-time access to current best practices
 
 ## Architecture
 
@@ -172,6 +213,7 @@ The AI agents provide structured output including:
 
 ```
 crewai>=0.86.0              # Multi-agent orchestration framework
+crewai-tools>=0.12.0        # Official CrewAI tools (CSVSearchTool, BraveSearchTool)
 langchain-openai>=0.3.0     # OpenAI integration for LangChain
 python-dotenv>=1.0.0        # Environment variable management
 ```
@@ -192,6 +234,7 @@ click==8                    # Command-line interface
 ### Environment Variables
 
 - `OPENAI_API_KEY`: Required for AI agent functionality
+- `BRAVE_API_KEY`: Optional, for BraveSearchTool functionality
 - Model used: `gpt-4o-mini` (configurable in `ABTestingCrew.__init__()`)
 
 ### Agent Configuration
@@ -203,6 +246,18 @@ Agents can be customized by modifying `crew_agents.py`:
 - **Verbosity:** Toggle `verbose` flag in Agent definitions
 - **Backstory:** Modify agent backstories to change behavior and expertise
 
+### Tool Configuration
+
+**CSVSearchTool:**
+- Pass `csv_file_path` parameter when initializing `ABTestingCrew`
+- Example: `crew = ABTestingCrew(csv_file_path="path/to/data.csv")`
+- If no path provided, Statistical Validator works without CSV analysis
+
+**BraveSearchTool:**
+- Set `BRAVE_API_KEY` environment variable for enhanced search
+- Works without API key using fallback search methods
+- Used automatically by Hypothesis Tester and Insights Generator
+
 ## Advanced Usage
 
 ### Programmatic Access
@@ -212,8 +267,11 @@ You can use the CrewAI agents programmatically:
 ```python
 from crew_agents import ABTestingCrew
 
-# Initialize crew
-crew = ABTestingCrew(model_name="gpt-4o-mini")
+# Initialize crew with CSV file for enhanced data analysis
+crew = ABTestingCrew(
+    model_name="gpt-4o-mini",
+    csv_file_path="Website_Results.csv"
+)
 
 # Prepare metrics
 metrics = {
@@ -229,11 +287,11 @@ metrics = {
     'conversions_b': 680
 }
 
-# Quick analysis
+# Quick analysis (uses BraveSearchTool for research)
 insights = crew.quick_analysis(metrics)
 print(insights)
 
-# Full analysis
+# Full analysis (uses both CSVSearchTool and BraveSearchTool)
 results = crew.analyze_ab_test(
     data_context="Your data description",
     test_context="Your test metrics",
@@ -366,7 +424,18 @@ For issues related to:
 
 ## Version History
 
+### v2.1.0 - Tools Enhancement (December 17, 2025)
+- **Tool Enhancement Agent T10**
+- Added CSVSearchTool for direct CSV data analysis
+- Added BraveSearchTool for A/B testing best practices research
+- Enhanced Statistical Validator with CSV analysis capabilities
+- Enhanced Hypothesis Tester with research capabilities
+- Enhanced Insights Generator with case study research
+- Updated documentation with tool usage examples
+- Added crewai-tools>=0.12.0 dependency
+
 ### v2.0.0 - CrewAI Upgrade (December 17, 2025)
+- **Agent 32**
 - Added three specialized AI agents
 - Integrated CrewAI for multi-agent orchestration
 - Added quick and detailed analysis modes
@@ -382,3 +451,4 @@ For issues related to:
 ---
 
 **Upgraded by Agent 32** | December 17, 2025
+**Tools Enhanced by Agent T10** | December 17, 2025

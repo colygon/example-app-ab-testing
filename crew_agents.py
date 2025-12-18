@@ -9,19 +9,32 @@ This module defines three specialized agents for comprehensive A/B testing analy
 
 from crewai import Agent, Task, Crew
 from langchain_openai import ChatOpenAI
+from crewai_tools import CSVSearchTool, BraveSearchTool
 import os
 
 
 class ABTestingCrew:
     """CrewAI implementation for A/B Testing analysis"""
 
-    def __init__(self, model_name="gpt-4o-mini"):
-        """Initialize the A/B Testing Crew with three specialized agents"""
+    def __init__(self, model_name="gpt-4o-mini", csv_file_path=None):
+        """Initialize the A/B Testing Crew with three specialized agents
+
+        Parameters
+        ----------
+        model_name : str
+            The OpenAI model to use (default: gpt-4o-mini)
+        csv_file_path : str, optional
+            Path to CSV file for CSVSearchTool analysis
+        """
         self.llm = ChatOpenAI(
             model=model_name,
             temperature=0.1,
             api_key=os.getenv("OPENAI_API_KEY")
         )
+
+        # Initialize tools
+        self.csv_search_tool = CSVSearchTool(csv=csv_file_path) if csv_file_path else None
+        self.brave_search_tool = BraveSearchTool()
 
         # Initialize agents
         self.statistical_validator = self._create_statistical_validator()
@@ -32,15 +45,22 @@ class ABTestingCrew:
         """
         Agent 1: Statistical Validator
         Validates data quality and test assumptions
+        Uses CSVSearchTool to analyze test results data
         """
+        tools = []
+        if self.csv_search_tool:
+            tools.append(self.csv_search_tool)
+
         return Agent(
             role="Statistical Validator",
-            goal="Validate data quality, check statistical assumptions, and identify potential issues in A/B test data",
+            goal="Validate data quality, check statistical assumptions, and identify potential issues in A/B test data using CSV analysis tools",
             backstory="""You are an expert data validation specialist with deep knowledge of
             statistical requirements for A/B testing. You meticulously check for data quality
             issues, sample size adequacy, variance homogeneity, and other critical assumptions
-            that must be met for valid statistical inference.""",
+            that must be met for valid statistical inference. You can analyze CSV files directly
+            to identify patterns, outliers, and data quality issues.""",
             llm=self.llm,
+            tools=tools,
             verbose=True,
             allow_delegation=False
         )
@@ -49,16 +69,19 @@ class ABTestingCrew:
         """
         Agent 2: Hypothesis Testing Agent
         Performs statistical significance testing and calculates metrics
+        Uses BraveSearchTool to research A/B testing best practices
         """
         return Agent(
             role="Hypothesis Testing Specialist",
-            goal="Conduct rigorous statistical hypothesis testing, calculate confidence intervals, and determine statistical significance",
+            goal="Conduct rigorous statistical hypothesis testing, calculate confidence intervals, and determine statistical significance using current best practices",
             backstory="""You are a statistical inference expert specializing in A/B testing
             methodology. You understand the nuances of one-sided vs two-sided tests, Type I
             and Type II errors, p-values, z-scores, and effect sizes. You provide precise
             statistical interpretations while being mindful of common pitfalls like p-hacking
-            and multiple testing problems.""",
+            and multiple testing problems. You can research the latest A/B testing methodologies
+            and best practices to ensure your analysis is state-of-the-art.""",
             llm=self.llm,
+            tools=[self.brave_search_tool],
             verbose=True,
             allow_delegation=False
         )
@@ -67,16 +90,19 @@ class ABTestingCrew:
         """
         Agent 3: Insights Generator
         Generates actionable business insights from statistical results
+        Uses BraveSearchTool to research implementation best practices
         """
         return Agent(
             role="Business Insights Analyst",
-            goal="Translate statistical findings into clear, actionable business recommendations",
+            goal="Translate statistical findings into clear, actionable business recommendations informed by industry best practices",
             backstory="""You are a business analytics expert who bridges the gap between
             statistical analysis and business decision-making. You excel at contextualizing
             A/B test results, explaining what they mean for the business, and providing
             clear recommendations. You consider practical significance alongside statistical
-            significance and always think about real-world implementation.""",
+            significance and always think about real-world implementation. You can research
+            industry best practices and case studies to inform your recommendations.""",
             llm=self.llm,
+            tools=[self.brave_search_tool],
             verbose=True,
             allow_delegation=False
         )
@@ -108,6 +134,12 @@ class ABTestingCrew:
             3. Assumptions verification (independence, random assignment, etc.)
             4. Potential biases or confounding factors
             5. Any concerns about the validity of statistical tests
+
+            If a CSV file is provided, use the CSVSearchTool to:
+            - Analyze data distributions and patterns
+            - Identify outliers or anomalies
+            - Check for data completeness
+            - Validate data consistency
 
             Provide a clear assessment of data quality and readiness for statistical testing.
             """,
@@ -154,6 +186,11 @@ class ABTestingCrew:
             6. Consideration of Type I and Type II error risks
             7. Power analysis recommendations if needed
 
+            Use BraveSearchTool to research:
+            - Current best practices in A/B testing methodology
+            - Common pitfalls to avoid in hypothesis testing
+            - Industry standards for significance levels and effect sizes
+
             Provide clear statistical conclusions about whether the test shows significant differences.
             """,
             agent=self.hypothesis_tester,
@@ -198,6 +235,11 @@ class ABTestingCrew:
             5. Potential risks or considerations for implementation
             6. Suggestions for follow-up tests or further investigation
             7. Key takeaways for stakeholders
+
+            Use BraveSearchTool to research:
+            - Industry case studies and implementation best practices
+            - Common challenges in A/B test rollouts
+            - Success metrics and KPIs for similar initiatives
 
             Make your recommendations clear, actionable, and business-focused.
             """,
